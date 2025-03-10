@@ -2,7 +2,7 @@
   "name": "data_dashboard",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://github.com/AvaAvarai/data_dashboard",
+  "homepage": "https://AvaAvarai.github.io/data_dashboard/",
   "dependencies": {
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
