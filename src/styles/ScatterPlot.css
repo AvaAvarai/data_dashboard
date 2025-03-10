@@ -1,0 +1,92 @@
+.scatter-plot-container {
+  background-color: white;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.scatter-plot-container h3 {
+  color: #333;
+  margin: 0 0 20px 0;
+  font-size: 1.5rem;
+}
+
+.controls {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.select-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.select-group label {
+  font-weight: 500;
+  color: #555;
+  min-width: 60px;
+}
+
+.select-group select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: white;
+  font-size: 14px;
+  color: #333;
+  min-width: 200px;
+  cursor: pointer;
+}
+
+.select-group select:hover {
+  border-color: #bbb;
+}
+
+.select-group select:focus {
+  outline: none;
+  border-color: #4e79a7;
+  box-shadow: 0 0 0 2px rgba(78, 121, 167, 0.25);
+}
+
+.plot-container {
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.plot-container svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Style the axis lines */
+.plot-container .domain {
+  stroke: #ccc;
+}
+
+/* Style the axis ticks */
+.plot-container .tick line {
+  stroke: #ccc;
+}
+
+/* Style the axis labels */
+.plot-container .tick text {
+  fill: #666;
+  font-size: 12px;
+}
+
+/* Add transition effects for points */
+.plot-container circle {
+  transition: opacity 0.2s ease;
+}
+
+.plot-container circle:hover {
+  opacity: 1 !important;
+} 

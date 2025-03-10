@@ -5,6 +5,7 @@ import Dendrogram from "./Dendrogram";
 import DataTable from "./DataTable";
 import DataStatistics from "./DataStatistics";
 import DataDistribution from "./DataDistribution";
+import ScatterPlot from "./ScatterPlot";
 import "../styles/DataDashboard.css";
 
 const DataDashboard = () => {
@@ -42,6 +43,7 @@ const DataDashboard = () => {
         <div className="dashboard-content">
           <DataStatistics data={data} headers={headers} />
           <DataDistribution data={data} />
+          <ScatterPlot data={data} headers={headers} />
           <ParallelCoordinatesPlot data={data} headers={headers} />
           <Dendrogram data={data} headers={headers} />
           <DataTable data={data} headers={headers} />
