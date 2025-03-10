@@ -5,7 +5,46 @@ import "./App.css";
 
 const ParallelCoordinatesPlot = ({ data, headers }) => {
   const svgRef = useRef(null);
+  const plotContainerRef = useRef(null);
   const [classColumn, setClassColumn] = useState(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [dimensions, setDimensions] = useState({
+    width: 900,
+    height: 500
+  });
+  
+  // Update dimensions when fullscreen changes or on window resize
+  useEffect(() => {
+    const updateDimensions = () => {
+      if (isFullscreen && plotContainerRef.current) {
+        // Get the container size for fullscreen mode
+        const containerWidth = plotContainerRef.current.clientWidth;
+        const containerHeight = plotContainerRef.current.clientHeight;
+        
+        // Set dimensions to fill the container with some padding
+        setDimensions({
+          width: containerWidth - 60, // Account for container padding
+          height: containerHeight - 180 // Account for header and controls
+        });
+      } else {
+        // Default dimensions for non-fullscreen mode
+        setDimensions({
+          width: 900,
+          height: 500
+        });
+      }
+    };
+    
+    // Update dimensions on fullscreen change
+    updateDimensions();
+    
+    // Add resize listener for responsive fullscreen
+    window.addEventListener('resize', updateDimensions);
+    
+    return () => {
+      window.removeEventListener('resize', updateDimensions);
+    };
+  }, [isFullscreen]);
   
   useEffect(() => {
     if (!data || !data.length || !headers || !headers.length) return;
@@ -39,12 +78,17 @@ const ParallelCoordinatesPlot = ({ data, headers }) => {
       return;
     }
     
-    // Setup dimensions
-    const margin = { top: 30, right: 120, bottom: 10, left: 50 };
-    const width = 900 - margin.left - margin.right;
-    const height = 500 - margin.top - margin.bottom;
+    // Setup dimensions based on fullscreen state
+    const margin = { 
+      top: 30, 
+      right: isFullscreen ? 180 : 120, 
+      bottom: 20, 
+      left: 50 
+    };
+    const width = dimensions.width - margin.left - margin.right;
+    const height = dimensions.height - margin.top - margin.bottom;
     
-    // Create SVG
+    // Create SVG with dynamic dimensions
     const svg = d3.select(svgRef.current)
       .attr("width", width + margin.left + margin.right)
       .attr("height", height + margin.top + margin.bottom)
@@ -132,7 +176,7 @@ const ParallelCoordinatesPlot = ({ data, headers }) => {
         .style("fill", "none")
         .style("stroke", lineColor)
         .style("opacity", 0.7)
-        .style("stroke-width", 1.5);
+        .style("stroke-width", isFullscreen ? 2 : 1.5);
     });
     
     // Add legend if class column is set
@@ -163,30 +207,90 @@ const ParallelCoordinatesPlot = ({ data, headers }) => {
       });
     }
     
-  }, [data, headers, classColumn]);
+  }, [data, headers, classColumn, dimensions, isFullscreen]);
+  
+  // Listen for fullscreen changes
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const fullscreenState = 
+        document.fullscreenElement === plotContainerRef.current ||
+        document.webkitFullscreenElement === plotContainerRef.current ||
+        document.mozFullScreenElement === plotContainerRef.current ||
+        document.msFullscreenElement === plotContainerRef.current;
+      
+      setIsFullscreen(fullscreenState);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+    };
+  }, []);
   
   const handleClassColumnChange = (e) => {
     setClassColumn(e.target.value === "none" ? null : e.target.value);
   };
   
+  const toggleFullscreen = () => {
+    if (!isFullscreen) {
+      if (plotContainerRef.current.requestFullscreen) {
+        plotContainerRef.current.requestFullscreen();
+      } else if (plotContainerRef.current.webkitRequestFullscreen) {
+        plotContainerRef.current.webkitRequestFullscreen();
+      } else if (plotContainerRef.current.mozRequestFullScreen) {
+        plotContainerRef.current.mozRequestFullScreen();
+      } else if (plotContainerRef.current.msRequestFullscreen) {
+        plotContainerRef.current.msRequestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      } else if (document.mozCancelFullScreen) {
+        document.mozCancelFullScreen();
+      } else if (document.msExitFullscreen) {
+        document.msExitFullscreen();
+      }
+    }
+  };
+  
   return (
-    <div className="parallel-plot-container">
-      <h3>Parallel Coordinates Plot</h3>
-      <div className="plot-controls">
-        <label htmlFor="class-select">Select the class column to color by: </label>
-        <select 
-          id="class-select" 
-          onChange={handleClassColumnChange}
-          value={classColumn || "none"}
-        >
-          <option value="none">-- No class selected --</option>
-          {headers.map((header, i) => (
-            <option key={i} value={header}>{header}</option>
-          ))}
-        </select>
+    <div className={`parallel-plot-container ${isFullscreen ? 'fullscreen' : ''}`} ref={plotContainerRef}>
+      <div className="plot-header">
+        <h3>Parallel Coordinates Plot</h3>
+        <div className="plot-controls">
+          <label htmlFor="class-select">Color by class: </label>
+          <select 
+            id="class-select" 
+            onChange={handleClassColumnChange}
+            value={classColumn || "none"}
+          >
+            <option value="none">-- No class selected --</option>
+            {headers.map((header, i) => (
+              <option key={i} value={header}>{header}</option>
+            ))}
+          </select>
+          <button 
+            className="fullscreen-btn" 
+            onClick={toggleFullscreen}
+            aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+          >
+            {isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+          </button>
+        </div>
       </div>
       <p>This visualization shows relationships between numeric dimensions in your data</p>
-      <svg ref={svgRef}></svg>
+      <div className="svg-container">
+        <svg ref={svgRef}></svg>
+      </div>
     </div>
   );
 };

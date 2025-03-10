@@ -66,11 +66,59 @@
   border-radius: 8px;
   background-color: #fff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
 }
 
-.parallel-plot-container h3 {
+.parallel-plot-container.fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
+  margin: 0;
+  padding: 30px;
+  border-radius: 0;
+  overflow: hidden;
+  background-color: white;
+}
+
+.plot-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.plot-header h3 {
+  margin: 0;
   color: #333;
-  margin-top: 0;
+}
+
+.svg-container {
+  flex-grow: 1;
+  width: 100%;
+  height: 500px;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.parallel-plot-container.fullscreen .svg-container {
+  height: calc(100vh - 180px);
+}
+
+.parallel-plot-container svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
 }
 
 .parallel-plot-container p {
@@ -78,19 +126,12 @@
   margin-bottom: 20px;
 }
 
-.parallel-plot-container svg {
-  width: 100%;
-  max-width: 900px;
-  height: auto;
-  margin: 0 auto;
-  display: block;
-}
-
 /* Plot Controls */
 .plot-controls {
-  margin-bottom: 15px;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .plot-controls label {
@@ -111,6 +152,29 @@
   outline: none;
   border-color: #007bff;
   box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+/* Fullscreen Button */
+.fullscreen-btn {
+  padding: 8px 16px;
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  transition: background-color 0.2s;
+}
+
+.fullscreen-btn:hover {
+  background-color: #3a7bc8;
+}
+
+.fullscreen-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.5);
 }
 
 /* Data Table */
