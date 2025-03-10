@@ -70,7 +70,6 @@ const Dendrogram = ({ data, headers }) => {
       numericData.every(row => typeof row[i] === "number")
     );
 
-    const numericHeaders = headers.filter((_, i) => numericColumns[i]);
     const processedData = numericData.map(row => 
       row.filter((_, i) => numericColumns[i])
     );
