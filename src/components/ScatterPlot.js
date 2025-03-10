@@ -26,9 +26,9 @@ const ScatterPlot = ({ data, headers }) => {
     })).filter(d => !isNaN(d.x) && !isNaN(d.y));
 
     // Set up dimensions
-    const width = 600;
+    const width = 800;
     const height = 400;
-    const margin = { top: 40, right: 40, bottom: 60, left: 60 };
+    const margin = { top: 40, right: 80, bottom: 60, left: 60 };
     const innerWidth = width - margin.left - margin.right;
     const innerHeight = height - margin.top - margin.bottom;
 
