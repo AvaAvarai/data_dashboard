@@ -86,6 +86,33 @@
   display: block;
 }
 
+/* Plot Controls */
+.plot-controls {
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+}
+
+.plot-controls label {
+  margin-right: 10px;
+  font-weight: 600;
+}
+
+.plot-controls select {
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  background-color: white;
+  min-width: 200px;
+  cursor: pointer;
+}
+
+.plot-controls select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
 /* Data Table */
 .table-container {
   overflow-x: auto;

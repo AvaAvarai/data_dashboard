@@ -5,6 +5,14 @@ import "./App.css";
 
 const ParallelCoordinatesPlot = ({ data, headers }) => {
   const svgRef = useRef(null);
+  const [classColumn, setClassColumn] = useState(null);
+  
+  // Find potentially categorical columns
+  const potentialClassColumns = headers.filter((header, i) => {
+    // Check if column has relatively low number of unique values
+    const values = new Set(data.map(row => row[i]));
+    return values.size > 1 && values.size <= Math.min(20, data.length / 3);
+  });
   
   useEffect(() => {
     if (!data || !data.length || !headers || !headers.length) return;
@@ -39,7 +47,7 @@ const ParallelCoordinatesPlot = ({ data, headers }) => {
     }
     
     // Setup dimensions
-    const margin = { top: 30, right: 50, bottom: 10, left: 50 };
+    const margin = { top: 30, right: 120, bottom: 10, left: 50 };
     const width = 900 - margin.left - margin.right;
     const height = 500 - margin.top - margin.bottom;
     
@@ -77,13 +85,26 @@ const ParallelCoordinatesPlot = ({ data, headers }) => {
         .style("fill", "black");
     });
     
+    // For class-based coloring
+    let classValues = [];
+    let classColorScale;
+    
+    // If class column is selected, extract all unique values for coloring
+    if (classColumn !== null) {
+      const classColumnIndex = headers.indexOf(classColumn);
+      classValues = [...new Set(data.map(row => row[classColumnIndex]))];
+      classColorScale = d3.scaleOrdinal(d3.schemeCategory10)
+        .domain(classValues);
+    } else {
+      // Default coloring by row index when no class column selected
+      classColorScale = d3.scaleOrdinal(d3.schemeCategory10);
+    }
+    
     // Add lines
     const line = d3.line()
       .defined(d => d !== null)
       .x(d => d.x)
       .y(d => d.y);
-    
-    const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
     
     numericData.forEach((row, i) => {
       const lineData = [];
@@ -102,20 +123,75 @@ const ParallelCoordinatesPlot = ({ data, headers }) => {
         }
       });
       
+      // Get color based on class if class column is set
+      let lineColor;
+      if (classColumn !== null) {
+        const classColumnIndex = headers.indexOf(classColumn);
+        const classValue = row[classColumnIndex];
+        lineColor = classColorScale(classValue);
+      } else {
+        lineColor = classColorScale(i % 10); // Fallback to index-based coloring
+      }
+      
       svg.append("path")
         .datum(lineData)
         .attr("d", line)
         .style("fill", "none")
-        .style("stroke", colorScale(i % 10))
-        .style("opacity", 0.5)
+        .style("stroke", lineColor)
+        .style("opacity", 0.7)
         .style("stroke-width", 1.5);
     });
     
-  }, [data, headers]);
+    // Add legend if class column is set
+    if (classColumn !== null && classValues.length > 0) {
+      const legend = svg.append("g")
+        .attr("class", "legend")
+        .attr("transform", `translate(${width + 10}, 0)`);
+      
+      legend.append("text")
+        .attr("x", 0)
+        .attr("y", -10)
+        .style("font-weight", "bold")
+        .text(classColumn);
+        
+      classValues.forEach((value, i) => {
+        const legendRow = legend.append("g")
+          .attr("transform", `translate(0, ${i * 20})`);
+          
+        legendRow.append("rect")
+          .attr("width", 10)
+          .attr("height", 10)
+          .attr("fill", classColorScale(value));
+          
+        legendRow.append("text")
+          .attr("x", 15)
+          .attr("y", 10)
+          .text(value);
+      });
+    }
+    
+  }, [data, headers, classColumn]);
+  
+  const handleClassColumnChange = (e) => {
+    setClassColumn(e.target.value === "none" ? null : e.target.value);
+  };
   
   return (
     <div className="parallel-plot-container">
       <h3>Parallel Coordinates Plot</h3>
+      <div className="plot-controls">
+        <label htmlFor="class-select">Color by class: </label>
+        <select 
+          id="class-select" 
+          onChange={handleClassColumnChange}
+          value={classColumn || "none"}
+        >
+          <option value="none">-- No class selected --</option>
+          {potentialClassColumns.map((header, i) => (
+            <option key={i} value={header}>{header}</option>
+          ))}
+        </select>
+      </div>
       <p>This visualization shows relationships between numeric dimensions in your data</p>
       <svg ref={svgRef}></svg>
     </div>
