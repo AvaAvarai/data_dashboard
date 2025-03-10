@@ -38,7 +38,7 @@ const DataDashboard = () => {
               </tr>
             </thead>
             <tbody>
-              {data.slice(0, 10).map((row, rowIndex) => (
+              {data.map((row, rowIndex) => (
                 <tr key={rowIndex}>
                   {row.map((cell, cellIndex) => (
                     <td key={cellIndex}>{cell}</td>
@@ -47,7 +47,7 @@ const DataDashboard = () => {
               ))}
             </tbody>
           </table>
-          {data.length > 10 && <p>Showing 10 of {data.length} rows</p>}
+          <p>Showing all {data.length} rows</p>
         </div>
       )}
     </div>
