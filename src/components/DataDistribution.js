@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import * as d3 from 'd3';
 import '../styles/DataDistribution.css';
 
@@ -7,7 +7,9 @@ const DataDistribution = ({ data }) => {
 
   // Count unique values in the last column (assuming it's the class)
   const classColumn = data.map(row => row[row.length - 1]);
-  const uniqueClasses = [...new Set(classColumn)];
+  
+  // Use useMemo to memoize uniqueClasses
+  const uniqueClasses = useMemo(() => [...new Set(classColumn)], [classColumn]);
 
   // Calculate cases per class
   const casesPerClass = uniqueClasses.reduce((acc, className) => {
@@ -22,8 +24,8 @@ const DataDistribution = ({ data }) => {
     d3.select(pieChartRef.current).selectAll("*").remove();
 
     // Set up dimensions with extra padding for labels
-    const width = 500;  // Increased from 400
-    const height = 500; // Increased from 400
+    const width = 500;
+    const height = 500;
     const margin = {
       top: 50,
       right: 120,
@@ -63,7 +65,7 @@ const DataDistribution = ({ data }) => {
       .outerRadius(radius * 1.1);
 
     // Add the arcs
-    const paths = svg.selectAll('path')
+    svg.selectAll('path')
       .data(data_ready)
       .join('path')
       .attr('d', arc)
