@@ -34,6 +34,23 @@
   gap: 20px;
 }
 
+.pie-chart-container {
+  grid-column: span 2;
+}
+
+.pie-chart {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 15px;
+  height: 300px;
+}
+
+.pie-chart svg {
+  max-width: 100%;
+  height: auto;
+}
+
 .stat-item {
   background-color: white;
   padding: 15px;

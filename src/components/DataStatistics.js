@@ -23,12 +23,6 @@ const DataStatistics = ({ data, headers }) => {
   const uniqueClasses = [...new Set(classColumn)];
   const numClasses = uniqueClasses.length;
 
-  // Calculate cases per class
-  const casesPerClass = uniqueClasses.reduce((acc, className) => {
-    acc[className] = classColumn.filter(c => c === className).length;
-    return acc;
-  }, {});
-
   return (
     <div className="statistics-container">
       <h3>Dataset Statistics</h3>
@@ -48,16 +42,6 @@ const DataStatistics = ({ data, headers }) => {
             {headers.map((header, index) => (
               <li key={header}>
                 {header}: {ranges[index].min} to {ranges[index].max}
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="stat-item">
-          <strong>Cases per Class:</strong>
-          <ul>
-            {Object.entries(casesPerClass).map(([className, count]) => (
-              <li key={className}>
-                {className}: {count} cases
               </li>
             ))}
           </ul>
