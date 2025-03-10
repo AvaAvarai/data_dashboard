@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Papa from "papaparse";
 import ParallelCoordinatesPlot from "./ParallelCoordinatesPlot";
+import Dendrogram from "./Dendrogram";
 import DataTable from "./DataTable";
 import "../styles/DataDashboard.css";
 
@@ -38,6 +39,7 @@ const DataDashboard = () => {
       {data && (
         <div className="dashboard-content">
           <ParallelCoordinatesPlot data={data} headers={headers} />
+          <Dendrogram data={data} headers={headers} />
           <DataTable data={data} headers={headers} />
         </div>
       )}
