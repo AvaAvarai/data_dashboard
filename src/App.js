@@ -7,13 +7,6 @@ const ParallelCoordinatesPlot = ({ data, headers }) => {
   const svgRef = useRef(null);
   const [classColumn, setClassColumn] = useState(null);
   
-  // Find potentially categorical columns
-  const potentialClassColumns = headers.filter((header, i) => {
-    // Check if column has relatively low number of unique values
-    const values = new Set(data.map(row => row[i]));
-    return values.size > 1 && values.size <= Math.min(20, data.length / 3);
-  });
-  
   useEffect(() => {
     if (!data || !data.length || !headers || !headers.length) return;
     
@@ -180,14 +173,14 @@ const ParallelCoordinatesPlot = ({ data, headers }) => {
     <div className="parallel-plot-container">
       <h3>Parallel Coordinates Plot</h3>
       <div className="plot-controls">
-        <label htmlFor="class-select">Color by class: </label>
+        <label htmlFor="class-select">Select the class column to color by: </label>
         <select 
           id="class-select" 
           onChange={handleClassColumnChange}
           value={classColumn || "none"}
         >
           <option value="none">-- No class selected --</option>
-          {potentialClassColumns.map((header, i) => (
+          {headers.map((header, i) => (
             <option key={i} value={header}>{header}</option>
           ))}
         </select>
