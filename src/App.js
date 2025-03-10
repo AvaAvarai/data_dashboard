@@ -12,7 +12,7 @@ function App() {
         <DataDashboard />
       </main>
       <footer className="App-footer">
-        <p>Created with React and D3.js</p>
+        <p>Created with React and D3.js - CWU-VKD-LAB MIT License 2025</p>
       </footer>
     </div>
   );
