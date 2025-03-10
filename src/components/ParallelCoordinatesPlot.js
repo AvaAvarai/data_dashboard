@@ -8,6 +8,7 @@ const ParallelCoordinatesPlot = ({ data, headers }) => {
   const svgRef = useRef(null);
   const plotContainerRef = useRef(null);
   const [classColumn, setClassColumn] = useState(null);
+  const [normalized, setNormalized] = useState(false);
   
   // Use custom hooks for fullscreen and dimensions
   const { isFullscreen, toggleFullscreen } = useFullscreen(plotContainerRef);
@@ -16,10 +17,10 @@ const ParallelCoordinatesPlot = ({ data, headers }) => {
   // Create the visualization using D3
   useEffect(() => {
     if (!data || !data.length || !headers || !headers.length) return;
-    
+  
     // Clear previous SVG
     d3.select(svgRef.current).selectAll("*").remove();
-    
+  
     // Convert data to numeric values where possible
     const numericData = data.map(row => {
       return row.map((value, i) => {
@@ -27,16 +28,15 @@ const ParallelCoordinatesPlot = ({ data, headers }) => {
         return isNaN(num) ? value : num;
       });
     });
-    
+  
     // Determine which columns are numeric
     const numericColumns = headers.map((header, i) => {
       return numericData.every(row => typeof row[i] === "number");
     });
-    
+  
     // Filter to only use numeric columns for the parallel coordinates
     const numericHeaders = headers.filter((_, i) => numericColumns[i]);
-    
-    // If no numeric columns, show a message
+  
     if (numericHeaders.length === 0) {
       d3.select(svgRef.current)
         .append("text")
@@ -45,39 +45,51 @@ const ParallelCoordinatesPlot = ({ data, headers }) => {
         .text("No numeric columns found for parallel coordinates visualization");
       return;
     }
-    
-    // Setup dimensions based on fullscreen state
-    const margin = { 
-      top: 30, 
-      right: isFullscreen ? 180 : 120, 
-      bottom: 20, 
-      left: 50 
-    };
+  
+    // Setup dimensions
+    const margin = { top: 30, right: isFullscreen ? 180 : 120, bottom: 20, left: 50 };
     const width = dimensions.width - margin.left - margin.right;
     const height = dimensions.height - margin.top - margin.bottom;
-    
-    // Create SVG with dynamic dimensions
+  
     const svg = d3.select(svgRef.current)
       .attr("width", width + margin.left + margin.right)
       .attr("height", height + margin.top + margin.bottom)
       .append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
-    
+  
+    // Find the global min/max across all numeric values
+    const allNumericValues = numericHeaders.flatMap(header => {
+      const columnIndex = headers.indexOf(header);
+      return numericData.map(row => row[columnIndex]);
+    });
+  
+    const globalMin = d3.min(allNumericValues);
+    const globalMax = d3.max(allNumericValues);
+  
     // Create scales for each dimension
     const y = {};
-    numericHeaders.forEach((header, i) => {
+    numericHeaders.forEach(header => {
       const columnIndex = headers.indexOf(header);
-      const values = numericData.map(d => d[columnIndex]);
-      y[header] = d3.scaleLinear()
-        .domain(d3.extent(values))
-        .range([height, 0]);
+      const values = numericData.map(row => row[columnIndex]);
+  
+      if (normalized) {
+        // Min-max normalization per column
+        y[header] = d3.scaleLinear()
+          .domain(d3.extent(values)) // Min-max per column
+          .range([height, 0]);
+      } else {
+        // Global raw scale (same for all columns)
+        y[header] = d3.scaleLinear()
+          .domain([globalMin, globalMax]) // Global min-max
+          .range([height, 0]);
+      }
     });
-    
+  
     // Create x scale for dimensions
     const x = d3.scalePoint()
       .range([0, width])
       .domain(numericHeaders);
-    
+  
     // Add axis for each dimension
     numericHeaders.forEach(header => {
       svg.append("g")
@@ -89,55 +101,36 @@ const ParallelCoordinatesPlot = ({ data, headers }) => {
         .text(header)
         .style("fill", "black");
     });
-    
+  
     // For class-based coloring
     let classValues = [];
     let classColorScale;
-    
-    // If class column is selected, extract all unique values for coloring
+  
     if (classColumn !== null) {
       const classColumnIndex = headers.indexOf(classColumn);
       classValues = [...new Set(data.map(row => row[classColumnIndex]))];
-      classColorScale = d3.scaleOrdinal(d3.schemeCategory10)
-        .domain(classValues);
+      classColorScale = d3.scaleOrdinal(d3.schemeCategory10).domain(classValues);
     } else {
-      // Default coloring by row index when no class column selected
       classColorScale = d3.scaleOrdinal(d3.schemeCategory10);
     }
-    
+  
     // Add lines
     const line = d3.line()
       .defined(d => d !== null)
       .x(d => d.x)
       .y(d => d.y);
-    
+  
     numericData.forEach((row, i) => {
-      const lineData = [];
-      
-      numericHeaders.forEach((header, j) => {
+      const lineData = numericHeaders.map(header => {
         const columnIndex = headers.indexOf(header);
         const value = row[columnIndex];
-        
-        if (typeof value === "number") {
-          lineData.push({
-            x: x(header),
-            y: y[header](value)
-          });
-        } else {
-          lineData.push(null); // Handle non-numeric values
-        }
+        return typeof value === "number" ? { x: x(header), y: y[header](value) } : null;
       });
-      
-      // Get color based on class if class column is set
-      let lineColor;
-      if (classColumn !== null) {
-        const classColumnIndex = headers.indexOf(classColumn);
-        const classValue = row[classColumnIndex];
-        lineColor = classColorScale(classValue);
-      } else {
-        lineColor = classColorScale(i % 10); // Fallback to index-based coloring
-      }
-      
+  
+      const lineColor = classColumn !== null
+        ? classColorScale(row[headers.indexOf(classColumn)])
+        : classColorScale(i % 10);
+  
       svg.append("path")
         .datum(lineData)
         .attr("d", line)
@@ -146,39 +139,15 @@ const ParallelCoordinatesPlot = ({ data, headers }) => {
         .style("opacity", 0.7)
         .style("stroke-width", isFullscreen ? 2 : 1.5);
     });
-    
-    // Add legend if class column is set
-    if (classColumn !== null && classValues.length > 0) {
-      const legend = svg.append("g")
-        .attr("class", "legend")
-        .attr("transform", `translate(${width + 10}, 0)`);
-      
-      legend.append("text")
-        .attr("x", 0)
-        .attr("y", -10)
-        .style("font-weight", "bold")
-        .text(classColumn);
-        
-      classValues.forEach((value, i) => {
-        const legendRow = legend.append("g")
-          .attr("transform", `translate(0, ${i * 20})`);
-          
-        legendRow.append("rect")
-          .attr("width", 10)
-          .attr("height", 10)
-          .attr("fill", classColorScale(value));
-          
-        legendRow.append("text")
-          .attr("x", 15)
-          .attr("y", 10)
-          .text(value);
-      });
-    }
-    
-  }, [data, headers, classColumn, dimensions, isFullscreen]);
+  
+  }, [data, headers, classColumn, dimensions, isFullscreen, normalized]);
   
   const handleClassColumnChange = (e) => {
     setClassColumn(e.target.value === "none" ? null : e.target.value);
+  };
+  
+  const toggleNormalization = () => {
+    setNormalized(!normalized);
   };
   
   return (
@@ -198,6 +167,12 @@ const ParallelCoordinatesPlot = ({ data, headers }) => {
             ))}
           </select>
           <button 
+            onClick={toggleNormalization}
+            className="normalize-btn"
+          >
+            {normalized ? "Use Actual Values" : "Normalize Values"}
+          </button>
+          <button 
             className="fullscreen-btn" 
             onClick={toggleFullscreen}
             aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
@@ -214,4 +189,4 @@ const ParallelCoordinatesPlot = ({ data, headers }) => {
   );
 };
 
-export default ParallelCoordinatesPlot; 
+export default ParallelCoordinatesPlot;
