@@ -112,6 +112,8 @@ const ParallelCoordinatesPlot = ({ data, headers }) => {
       classColorScale = d3.scaleOrdinal(d3.schemeCategory10).domain(classValues);
     } else {
       classColorScale = d3.scaleOrdinal(d3.schemeCategory10);
+      // Create default groups when no class is selected
+      classValues = Array.from({length: 10}, (_, i) => `Group ${i + 1}`);
     }
   
     // Add lines
@@ -138,6 +140,40 @@ const ParallelCoordinatesPlot = ({ data, headers }) => {
         .style("stroke", lineColor)
         .style("opacity", 0.7)
         .style("stroke-width", isFullscreen ? 2 : 1.5);
+    });
+  
+    // Add legend (now always shown)
+    const legendGroup = svg.append("g")
+      .attr("class", "legend")
+      .attr("transform", `translate(${width + 20}, 0)`);
+
+    // Add legend title
+    legendGroup.append("text")
+      .attr("x", 0)
+      .attr("y", -10)
+      .text(classColumn ? "Classes" : "Color Groups")
+      .style("font-weight", "bold")
+      .style("font-size", "12px");
+
+    classValues.forEach((className, i) => {
+      const legendRow = legendGroup.append("g")
+        .attr("transform", `translate(0, ${i * 25 + 10})`);
+      
+      legendRow.append("line")
+        .attr("x1", 0)
+        .attr("y1", 0)
+        .attr("x2", 30)
+        .attr("y2", 0)
+        .style("stroke", classColorScale(classColumn ? className : i))
+        .style("stroke-width", 2.5)
+        .style("opacity", 0.7);
+      
+      legendRow.append("text")
+        .attr("x", 40)
+        .attr("y", 4)
+        .text(className)
+        .style("font-size", "12px")
+        .style("fill", "#333");
     });
   
   }, [data, headers, classColumn, dimensions, isFullscreen, normalized]);
