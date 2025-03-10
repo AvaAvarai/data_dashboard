@@ -13,13 +13,6 @@ const ParallelCoordinatesPlot = ({ data, headers }) => {
   const { isFullscreen, toggleFullscreen } = useFullscreen(plotContainerRef);
   const dimensions = useDimensions(plotContainerRef, isFullscreen);
   
-  // Find potentially categorical columns for class coloring
-  const potentialClassColumns = headers.filter((header, i) => {
-    // Check if column has relatively low number of unique values
-    const values = new Set(data.map(row => row[i]));
-    return values.size > 1 && values.size <= Math.min(20, data.length / 3);
-  });
-  
   // Create the visualization using D3
   useEffect(() => {
     if (!data || !data.length || !headers || !headers.length) return;
@@ -200,7 +193,7 @@ const ParallelCoordinatesPlot = ({ data, headers }) => {
             value={classColumn || "none"}
           >
             <option value="none">-- No class selected --</option>
-            {potentialClassColumns.map((header, i) => (
+            {headers.map((header, i) => (
               <option key={i} value={header}>{header}</option>
             ))}
           </select>
