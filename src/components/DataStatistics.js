@@ -36,7 +36,7 @@ const DataStatistics = ({ data, headers }) => {
         <div className="stat-item">
           <strong>Number of Classes:</strong> {numClasses}
         </div>
-        <div className="stat-item">
+        <div className="stat-item attribute-ranges">
           <strong>Attribute Ranges:</strong>
           <ul>
             {headers.map((header, index) => (

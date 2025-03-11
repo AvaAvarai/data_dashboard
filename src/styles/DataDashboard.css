@@ -58,6 +58,27 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+.stat-item.attribute-ranges {
+  max-height: 300px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #007bff #f0f0f0;
+}
+
+.stat-item.attribute-ranges::-webkit-scrollbar {
+  width: 8px;
+}
+
+.stat-item.attribute-ranges::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 4px;
+}
+
+.stat-item.attribute-ranges::-webkit-scrollbar-thumb {
+  background-color: #007bff;
+  border-radius: 4px;
+}
+
 .stat-item strong {
   display: block;
   margin-bottom: 8px;
