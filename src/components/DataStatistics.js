@@ -4,22 +4,31 @@ const DataStatistics = ({ data, headers }) => {
   // Calculate statistics
   const numCases = data.length;
   
-  // Calculate ranges for each attribute and identify the first N/A column
+  // Calculate ranges and unique values for each attribute
   let defaultClassColumnIndex = -1;
-  const ranges = headers.map((header, index) => {
-    const values = data.map(row => parseFloat(row[index]));
-    const validValues = values.filter(val => !isNaN(val));
+  const attributeStats = headers.map((header, index) => {
+    const values = data.map(row => row[index]);
+    const numericValues = values.map(val => parseFloat(val));
+    const validNumericValues = numericValues.filter(val => !isNaN(val));
     
-    if (validValues.length === 0) {
+    // Count unique values for this attribute
+    const uniqueValues = new Set(values);
+    
+    if (validNumericValues.length === 0) {
       if (defaultClassColumnIndex === -1) {
-        defaultClassColumnIndex = index; // Mark the first N/A column as the class column
+        defaultClassColumnIndex = index;
       }
-      return { min: 'N/A', max: 'N/A' };
+      return {
+        min: 'N/A',
+        max: 'N/A',
+        uniqueCount: uniqueValues.size
+      };
     }
     
     return {
-      min: Math.min(...validValues),
-      max: Math.max(...validValues)
+      min: Math.min(...validNumericValues),
+      max: Math.max(...validNumericValues),
+      uniqueCount: uniqueValues.size
     };
   });
   
@@ -32,7 +41,7 @@ const DataStatistics = ({ data, headers }) => {
   const [classColumnIndex, setClassColumnIndex] = useState(defaultClassColumnIndex);
   
   // Count N/A columns (columns where all values are NaN)
-  const naColumns = ranges.filter(range => range.min === 'N/A' && range.max === 'N/A').length;
+  const naColumns = attributeStats.filter(stat => stat.min === 'N/A' && stat.max === 'N/A').length;
   
   // Calculate actual number of attributes excluding N/A columns
   const numAttributes = headers.length - naColumns;
@@ -88,14 +97,22 @@ const DataStatistics = ({ data, headers }) => {
           </select>
         </div>
         <div className="stat-item attribute-ranges">
-          <strong>Attribute Ranges:</strong>
+          <strong>Attribute Details:</strong>
           <ul>
             {headers.map((header, index) => (
-              ranges[index].min !== 'N/A' && ranges[index].max !== 'N/A' && (
-                <li key={header}>
-                  {header}: {ranges[index].min} to {ranges[index].max}
-                </li>
-              )
+              <li key={header}>
+                <strong>{header}:</strong>
+                {attributeStats[index].min !== 'N/A' ? (
+                  <span>
+                    Range: {attributeStats[index].min} to {attributeStats[index].max}
+                  </span>
+                ) : (
+                  <span>Non-numeric attribute</span>
+                )}
+                <span className="unique-count">
+                  {' '}• {attributeStats[index].uniqueCount} unique values
+                </span>
+              </li>
             ))}
           </ul>
         </div>
