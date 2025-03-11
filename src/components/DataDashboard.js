@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import Papa from "papaparse";
 import ParallelCoordinatesPlot from "./ParallelCoordinatesPlot";
 import Dendrogram from "./Dendrogram";
@@ -11,6 +11,17 @@ import "../styles/DataDashboard.css";
 const DataDashboard = () => {
   const [data, setData] = useState(null);
   const [headers, setHeaders] = useState([]);
+
+  // Memoize the filtered data to prevent unnecessary recalculations
+  const processedData = useMemo(() => {
+    if (!data) return null;
+    return data.map(row => 
+      row.map(value => {
+        const num = parseFloat(value);
+        return isNaN(num) ? value : num;
+      })
+    );
+  }, [data]);
 
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
@@ -26,6 +37,10 @@ const DataDashboard = () => {
         setData(rows);
       },
       header: false,
+      worker: true, // Use web worker for parsing
+      skipEmptyLines: true, // Skip empty lines
+      dynamicTyping: true, // Automatically convert numbers
+      fastMode: true, // Use fast mode for homogeneous data
     });
   };
 
@@ -39,14 +54,14 @@ const DataDashboard = () => {
         className="file-upload"
       />
       
-      {data && (
+      {processedData && (
         <div className="dashboard-content">
-          <DataStatistics data={data} headers={headers} />
-          <DataDistribution data={data} />
-          <ScatterPlot data={data} headers={headers} />
-          <ParallelCoordinatesPlot data={data} headers={headers} />
-          <Dendrogram data={data} headers={headers} />
-          <DataTable data={data} headers={headers} />
+          <DataStatistics data={processedData} headers={headers} />
+          <DataDistribution data={processedData} />
+          <ScatterPlot data={processedData} headers={headers} />
+          <ParallelCoordinatesPlot data={processedData} headers={headers} />
+          <Dendrogram data={processedData} headers={headers} />
+          <DataTable data={processedData} headers={headers} />
         </div>
       )}
     </div>

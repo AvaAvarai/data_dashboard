@@ -114,4 +114,55 @@
 .fullscreen-btn:focus {
   outline: none;
   box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.5);
+}
+
+.visualization-container {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.svg-container {
+  flex: 1;
+  min-width: 0; /* Allows SVG container to shrink below content size */
+  height: 500px;
+  position: relative;
+}
+
+.parallel-plot-container.fullscreen .svg-container {
+  height: calc(100vh - 180px);
+}
+
+.legend-container {
+  width: 200px;
+  flex-shrink: 0;
+  padding: 15px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.legend-container h4 {
+  margin: 0 0 15px 0;
+  color: #333;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.legend-color {
+  width: 30px;
+  height: 2px;
+  border-radius: 1px;
+}
+
+.legend-label {
+  font-size: 12px;
+  color: #333;
 } 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import * as d3 from "d3";
 import { useFullscreen } from "../hooks/useFullscreen";
 import { useDimensions } from "../hooks/useDimensions";
@@ -13,83 +13,100 @@ const ParallelCoordinatesPlot = ({ data, headers }) => {
   // Use custom hooks for fullscreen and dimensions
   const { isFullscreen, toggleFullscreen } = useFullscreen(plotContainerRef);
   const dimensions = useDimensions(plotContainerRef, isFullscreen);
-  
+
+  // Memoize numeric data processing
+  const { numericHeaders } = useMemo(() => {
+    if (!data || !data.length || !headers || !headers.length) {
+      return { numericHeaders: [] };
+    }
+
+    const numericColumns = headers.map((_, i) => {
+      return data.every(row => typeof row[i] === "number");
+    });
+
+    const numericHeaders = headers.filter((_, i) => numericColumns[i]);
+
+    return { numericHeaders };
+  }, [data, headers]);
+
+  // Memoize scales and color calculations
+  const { y, x, classColorScale, classValues } = useMemo(() => {
+    if (numericHeaders.length === 0) return {};
+
+    const allNumericValues = numericHeaders.flatMap(header => {
+      const columnIndex = headers.indexOf(header);
+      return data.map(row => row[columnIndex]);
+    });
+
+    const globalMin = d3.min(allNumericValues);
+    const globalMax = d3.max(allNumericValues);
+
+    // Create scales for each dimension
+    const y = {};
+    numericHeaders.forEach(header => {
+      const columnIndex = headers.indexOf(header);
+      const values = data.map(row => row[columnIndex]);
+
+      if (normalized) {
+        y[header] = d3.scaleLinear()
+          .domain(d3.extent(values))
+          .range([dimensions.height, 0]);
+      } else {
+        y[header] = d3.scaleLinear()
+          .domain([globalMin, globalMax])
+          .range([dimensions.height, 0]);
+      }
+    });
+
+    const x = d3.scalePoint()
+      .range([0, dimensions.width])
+      .domain(numericHeaders);
+
+    let classValues = [];
+    let classColorScale;
+
+    if (classColumn !== null) {
+      const classColumnIndex = headers.indexOf(classColumn);
+      classValues = [...new Set(data.map(row => row[classColumnIndex]))];
+      classColorScale = d3.scaleOrdinal(d3.schemeCategory10).domain(classValues);
+    } else {
+      classColorScale = d3.scaleOrdinal(d3.schemeCategory10);
+      classValues = Array.from({length: 10}, (_, i) => `Group ${i + 1}`);
+    }
+
+    return { y, x, classColorScale, classValues };
+  }, [numericHeaders, headers, data, normalized, classColumn, dimensions]);
+
+  // Memoize line generator
+  const line = useMemo(() => {
+    return d3.line()
+      .defined(d => d !== null)
+      .x(d => d.x)
+      .y(d => d.y);
+  }, []);
+
   // Create the visualization using D3
   useEffect(() => {
-    if (!data || !data.length || !headers || !headers.length) return;
-  
-    // Clear previous SVG
-    d3.select(svgRef.current).selectAll("*").remove();
-  
-    // Convert data to numeric values where possible
-    const numericData = data.map(row => {
-      return row.map((value, i) => {
-        const num = parseFloat(value);
-        return isNaN(num) ? value : num;
-      });
-    });
-  
-    // Determine which columns are numeric
-    const numericColumns = headers.map((header, i) => {
-      return numericData.every(row => typeof row[i] === "number");
-    });
-  
-    // Filter to only use numeric columns for the parallel coordinates
-    const numericHeaders = headers.filter((_, i) => numericColumns[i]);
-  
-    if (numericHeaders.length === 0) {
-      d3.select(svgRef.current)
-        .append("text")
-        .attr("x", 10)
-        .attr("y", 30)
-        .text("No numeric columns found for parallel coordinates visualization");
-      return;
-    }
-  
-    // Setup dimensions
-    const margin = { top: 30, right: isFullscreen ? 180 : 120, bottom: 20, left: 50 };
+    if (!data?.length || !headers?.length || !numericHeaders.length) return;
+
+    const margin = { 
+      top: 20, 
+      right: 30,
+      bottom: 20, 
+      left: 50 
+    };
     const width = dimensions.width - margin.left - margin.right;
     const height = dimensions.height - margin.top - margin.bottom;
-  
+
+    // Clear previous SVG
+    d3.select(svgRef.current).selectAll("*").remove();
+
     const svg = d3.select(svgRef.current)
       .attr("width", width + margin.left + margin.right)
       .attr("height", height + margin.top + margin.bottom)
       .append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
-  
-    // Find the global min/max across all numeric values
-    const allNumericValues = numericHeaders.flatMap(header => {
-      const columnIndex = headers.indexOf(header);
-      return numericData.map(row => row[columnIndex]);
-    });
-  
-    const globalMin = d3.min(allNumericValues);
-    const globalMax = d3.max(allNumericValues);
-  
-    // Create scales for each dimension
-    const y = {};
-    numericHeaders.forEach(header => {
-      const columnIndex = headers.indexOf(header);
-      const values = numericData.map(row => row[columnIndex]);
-  
-      if (normalized) {
-        // Min-max normalization per column
-        y[header] = d3.scaleLinear()
-          .domain(d3.extent(values)) // Min-max per column
-          .range([height, 0]);
-      } else {
-        // Global raw scale (same for all columns)
-        y[header] = d3.scaleLinear()
-          .domain([globalMin, globalMax]) // Global min-max
-          .range([height, 0]);
-      }
-    });
-  
-    // Create x scale for dimensions
-    const x = d3.scalePoint()
-      .range([0, width])
-      .domain(numericHeaders);
-  
+
     // Add axis for each dimension
     numericHeaders.forEach(header => {
       svg.append("g")
@@ -101,91 +118,44 @@ const ParallelCoordinatesPlot = ({ data, headers }) => {
         .text(header)
         .style("fill", "black");
     });
-  
-    // For class-based coloring
-    let classValues = [];
-    let classColorScale;
-  
-    if (classColumn !== null) {
-      const classColumnIndex = headers.indexOf(classColumn);
-      classValues = [...new Set(data.map(row => row[classColumnIndex]))];
-      classColorScale = d3.scaleOrdinal(d3.schemeCategory10).domain(classValues);
-    } else {
-      classColorScale = d3.scaleOrdinal(d3.schemeCategory10);
-      // Create default groups when no class is selected
-      classValues = Array.from({length: 10}, (_, i) => `Group ${i + 1}`);
-    }
-  
-    // Add lines
-    const line = d3.line()
-      .defined(d => d !== null)
-      .x(d => d.x)
-      .y(d => d.y);
-  
-    numericData.forEach((row, i) => {
-      const lineData = numericHeaders.map(header => {
+
+    // Prepare line data
+    const lineData = data.map((row, i) => {
+      const points = numericHeaders.map(header => {
         const columnIndex = headers.indexOf(header);
         const value = row[columnIndex];
         return typeof value === "number" ? { x: x(header), y: y[header](value) } : null;
       });
-  
-      const lineColor = classColumn !== null
-        ? classColorScale(row[headers.indexOf(classColumn)])
-        : classColorScale(i % 10);
-  
-      svg.append("path")
-        .datum(lineData)
-        .attr("d", line)
-        .style("fill", "none")
-        .style("stroke", lineColor)
-        .style("opacity", 0.7)
-        .style("stroke-width", isFullscreen ? 2 : 1.5);
-    });
-  
-    // Add legend (now always shown)
-    const legendGroup = svg.append("g")
-      .attr("class", "legend")
-      .attr("transform", `translate(${width + 20}, 0)`);
 
-    // Add legend title
-    legendGroup.append("text")
-      .attr("x", 0)
-      .attr("y", -10)
-      .text(classColumn ? "Classes" : "Color Groups")
-      .style("font-weight", "bold")
-      .style("font-size", "12px");
-
-    classValues.forEach((className, i) => {
-      const legendRow = legendGroup.append("g")
-        .attr("transform", `translate(0, ${i * 25 + 10})`);
-      
-      legendRow.append("line")
-        .attr("x1", 0)
-        .attr("y1", 0)
-        .attr("x2", 30)
-        .attr("y2", 0)
-        .style("stroke", classColorScale(classColumn ? className : i))
-        .style("stroke-width", 2.5)
-        .style("opacity", 0.7);
-      
-      legendRow.append("text")
-        .attr("x", 40)
-        .attr("y", 4)
-        .text(className)
-        .style("font-size", "12px")
-        .style("fill", "#333");
+      return {
+        points,
+        color: classColumn !== null
+          ? classColorScale(row[headers.indexOf(classColumn)])
+          : classColorScale(i % 10)
+      };
     });
-  
-  }, [data, headers, classColumn, dimensions, isFullscreen, normalized]);
-  
-  const handleClassColumnChange = (e) => {
+
+    // Add lines using efficient join pattern
+    svg.selectAll("path.line")
+      .data(lineData)
+      .join("path")
+      .attr("class", "line")
+      .attr("d", d => line(d.points))
+      .style("fill", "none")
+      .style("stroke", d => d.color)
+      .style("opacity", 0.7)
+      .style("stroke-width", isFullscreen ? 2 : 1.5);
+
+  }, [data, headers, numericHeaders, dimensions, isFullscreen, x, y, line, classColumn, classColorScale, classValues]);
+
+  const handleClassColumnChange = useCallback((e) => {
     setClassColumn(e.target.value === "none" ? null : e.target.value);
-  };
-  
-  const toggleNormalization = () => {
-    setNormalized(!normalized);
-  };
-  
+  }, []);
+
+  const toggleNormalization = useCallback(() => {
+    setNormalized(prev => !prev);
+  }, []);
+
   return (
     <div className={`parallel-plot-container ${isFullscreen ? 'fullscreen' : ''}`} ref={plotContainerRef}>
       <div className="plot-header">
@@ -218,8 +188,25 @@ const ParallelCoordinatesPlot = ({ data, headers }) => {
         </div>
       </div>
       <p>This visualization shows relationships between numeric dimensions in your data</p>
-      <div className="svg-container">
-        <svg ref={svgRef}></svg>
+      <div className="visualization-container">
+        <div className="svg-container">
+          <svg ref={svgRef}></svg>
+        </div>
+        <div className="legend-container">
+          <h4>{classColumn ? "Classes" : "Color Groups"}</h4>
+          {classValues.map((value, i) => (
+            <div key={i} className="legend-item">
+              <span 
+                className="legend-color" 
+                style={{
+                  backgroundColor: classColorScale(classColumn ? value : i),
+                  opacity: 0.7
+                }}
+              />
+              <span className="legend-label">{value}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
