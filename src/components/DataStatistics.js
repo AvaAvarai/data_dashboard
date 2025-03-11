@@ -3,7 +3,16 @@ import React from 'react';
 const DataStatistics = ({ data, headers }) => {
   // Calculate statistics
   const numCases = data.length;
-  const numAttributes = headers.length;
+  
+  // Count N/A columns (columns where all values are NaN)
+  const naColumns = headers.filter((header, index) => {
+    const values = data.map(row => parseFloat(row[index]));
+    const validValues = values.filter(val => !isNaN(val));
+    return validValues.length === 0;
+  }).length;
+  
+  // Calculate actual number of attributes excluding N/A columns
+  const numAttributes = headers.length - naColumns;
 
   // Calculate ranges for each attribute
   const ranges = headers.map((header, index) => {
