@@ -27,6 +27,10 @@ const DataDashboard = () => {
     const file = event.target.files[0];
     if (!file) return;
 
+    // Clear existing data first
+    setData(null);
+    setHeaders([]);
+
     Papa.parse(file, {
       complete: (result) => {
         const parsedData = result.data;
@@ -35,6 +39,9 @@ const DataDashboard = () => {
         setHeaders(parsedData[0]);
         const rows = parsedData.slice(1).filter(row => row.length === parsedData[0].length);
         setData(rows);
+        
+        // Reset the file input
+        event.target.value = '';
       },
       header: false,
       worker: true, // Use web worker for parsing
@@ -52,16 +59,17 @@ const DataDashboard = () => {
         accept=".csv" 
         onChange={handleFileUpload} 
         className="file-upload"
+        key="file-input"
       />
       
       {processedData && (
         <div className="dashboard-content">
-          <DataStatistics data={processedData} headers={headers} />
-          <DataDistribution data={processedData} />
-          <ScatterPlot data={processedData} headers={headers} />
-          <ParallelCoordinatesPlot data={processedData} headers={headers} />
-          <Dendrogram data={processedData} headers={headers} />
-          <DataTable data={processedData} headers={headers} />
+          <DataStatistics key="stats" data={processedData} headers={headers} />
+          <DataDistribution key="dist" data={processedData} />
+          <ScatterPlot key="scatter" data={processedData} headers={headers} />
+          <ParallelCoordinatesPlot key="parallel" data={processedData} headers={headers} />
+          <Dendrogram key="dendro" data={processedData} headers={headers} />
+          <DataTable key="table" data={processedData} headers={headers} />
         </div>
       )}
     </div>
