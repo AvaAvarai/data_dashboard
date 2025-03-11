@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import * as d3 from 'd3';
 import '../styles/DataDistribution.css';
+import { getColorScale } from '../utils/colorScales';
 
 const DataDistribution = ({ data }) => {
   const pieChartRef = useRef();
@@ -34,10 +35,8 @@ const DataDistribution = ({ data }) => {
     };
     const radius = Math.min(width - margin.left - margin.right, height - margin.top - margin.bottom) / 2;
 
-    // Create color scale
-    const color = d3.scaleOrdinal()
-      .domain(uniqueClasses)
-      .range(['#4e79a7', '#f28e2c', '#e15759', '#76b7b2', '#59a14f']);
+    // Use the shared color scale
+    const color = getColorScale(uniqueClasses);
 
     // Create SVG
     const svg = d3.select(pieChartRef.current)

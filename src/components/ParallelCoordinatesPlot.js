@@ -3,6 +3,7 @@ import * as d3 from "d3";
 import { useFullscreen } from "../hooks/useFullscreen";
 import { useDimensions } from "../hooks/useDimensions";
 import "../styles/ParallelCoordinatesPlot.css";
+import { getColorScale } from '../utils/colorScales';
 
 const ParallelCoordinatesPlot = ({ data, headers }) => {
   const svgRef = useRef(null);
@@ -114,8 +115,8 @@ const ParallelCoordinatesPlot = ({ data, headers }) => {
       classValues = Array.from({length: 10}, (_, i) => `Group ${i + 1}`);
     }
 
-    const classColorScale = d3.scaleOrdinal(d3.schemeCategory10)
-      .domain(classValues);
+    // Use the shared color scale
+    const classColorScale = getColorScale(classValues);
 
     return { y, x, classColorScale, classValues };
   }, [numericHeaders, headers, data, normalized, dimensions, classColumn]);

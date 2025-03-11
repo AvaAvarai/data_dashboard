@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 import '../styles/ScatterPlot.css';
+import { getColorScale } from '../utils/colorScales';
 
 const ScatterPlot = ({ data, headers }) => {
   const [xAttribute, setXAttribute] = useState(headers[0]);
@@ -43,11 +44,9 @@ const ScatterPlot = ({ data, headers }) => {
       .range([innerHeight, 0])
       .nice();
 
-    // Create color scale for classes
+    // Get unique classes and use shared color scale
     const uniqueClasses = [...new Set(points.map(d => d.class))];
-    const colorScale = d3.scaleOrdinal()
-      .domain(uniqueClasses)
-      .range(['#4e79a7', '#f28e2c', '#e15759', '#76b7b2', '#59a14f']);
+    const colorScale = getColorScale(uniqueClasses);
 
     // Create SVG
     const svg = d3.select(plotRef.current)
@@ -93,11 +92,9 @@ const ScatterPlot = ({ data, headers }) => {
 
   }, [data, headers, xAttribute, yAttribute]);
 
-  // Get unique classes for the legend
+  // Get unique classes for the legend using shared color scale
   const uniqueClasses = [...new Set(data.map(row => row[headers.length - 1]))];
-  const colorScale = d3.scaleOrdinal()
-    .domain(uniqueClasses)
-    .range(['#4e79a7', '#f28e2c', '#e15759', '#76b7b2', '#59a14f']);
+  const colorScale = getColorScale(uniqueClasses);
 
   return (
     <div className="scatter-plot-container">
