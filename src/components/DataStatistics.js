@@ -49,9 +49,11 @@ const DataStatistics = ({ data, headers }) => {
           <strong>Attribute Ranges:</strong>
           <ul>
             {headers.map((header, index) => (
-              <li key={header}>
-                {header}: {ranges[index].min} to {ranges[index].max}
-              </li>
+              ranges[index].min !== 'N/A' && ranges[index].max !== 'N/A' && (
+                <li key={header}>
+                  {header}: {ranges[index].min} to {ranges[index].max}
+                </li>
+              )
             ))}
           </ul>
         </div>
