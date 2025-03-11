@@ -1,6 +1,6 @@
 {
   "name": "data_dashboard",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "private": true,
   "homepage": "https://AvaAvarai.github.io/data_dashboard/",
   "dependencies": {
@@ -16,7 +16,10 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
+    "sync-version": "node scripts/sync-version.js",
+    "prestart": "npm run sync-version",
     "start": "react-scripts start",
+    "prebuild": "npm run sync-version",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",

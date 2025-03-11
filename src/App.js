@@ -1,5 +1,6 @@
 import React from "react";
 import DataDashboard from "./components/DataDashboard";
+import { version } from './version';
 import "./App.css";
 
 function App() {
@@ -12,7 +13,7 @@ function App() {
         <DataDashboard />
       </main>
       <footer className="App-footer">
-        <p>Created with React and D3.js - CWU-VKD-LAB MIT License 2025</p>
+        <p>Created with React and D3.js | CWU-VKD-LAB MIT License 2025 | Version: {version}</p>
       </footer>
     </div>
   );
