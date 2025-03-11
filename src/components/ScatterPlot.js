@@ -91,28 +91,13 @@ const ScatterPlot = ({ data, headers }) => {
       .attr('fill', d => colorScale(d.class))
       .attr('opacity', 0.7);
 
-    // Add legend
-    const legend = svg.append('g')
-      .attr('transform', `translate(${width - margin.right + 10}, ${margin.top})`);
-
-    uniqueClasses.forEach((className, i) => {
-      const legendRow = legend.append('g')
-        .attr('transform', `translate(0, ${i * 20})`);
-      
-      legendRow.append('circle')
-        .attr('cx', 0)
-        .attr('cy', 0)
-        .attr('r', 5)
-        .attr('fill', colorScale(className));
-      
-      legendRow.append('text')
-        .attr('x', 10)
-        .attr('y', 4)
-        .text(className)
-        .style('font-size', '12px');
-    });
-
   }, [data, headers, xAttribute, yAttribute]);
+
+  // Get unique classes for the legend
+  const uniqueClasses = [...new Set(data.map(row => row[headers.length - 1]))];
+  const colorScale = d3.scaleOrdinal()
+    .domain(uniqueClasses)
+    .range(['#4e79a7', '#f28e2c', '#e15759', '#76b7b2', '#59a14f']);
 
   return (
     <div className="scatter-plot-container">
@@ -141,7 +126,24 @@ const ScatterPlot = ({ data, headers }) => {
           </select>
         </div>
       </div>
-      <div className="plot-container" ref={plotRef}></div>
+      <div className="visualization-container">
+        <div className="plot-container" ref={plotRef}></div>
+        <div className="legend-container">
+          <h4>Classes</h4>
+          {uniqueClasses.map((value, i) => (
+            <div key={i} className="legend-item">
+              <span 
+                className="legend-color" 
+                style={{
+                  backgroundColor: colorScale(value),
+                  opacity: 0.7
+                }}
+              />
+              <span className="legend-label">{value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };

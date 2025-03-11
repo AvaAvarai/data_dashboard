@@ -148,7 +148,7 @@ const DataDistribution = ({ data }) => {
 
   return (
     <div className="distribution-container">
-      <h3>Data Class Distribution</h3>
+      <h3>Data Case to Class Distribution</h3>
       <div className="distribution-content">
         <div className="pie-chart-section">
           <div ref={pieChartRef} className="pie-chart"></div>
