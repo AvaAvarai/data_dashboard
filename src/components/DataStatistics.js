@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const DataStatistics = ({ data, headers }) => {
   // Calculate statistics
@@ -45,6 +45,19 @@ const DataStatistics = ({ data, headers }) => {
   // Handle class column change
   const handleClassColumnChange = (e) => {
     setClassColumnIndex(parseInt(e.target.value));
+  };
+
+  // Class column getter - expose the current class column index via a data attribute
+  useEffect(() => {
+    const statisticsContainer = document.querySelector('.statistics-container');
+    if (statisticsContainer) {
+      statisticsContainer.dataset.classColumnIndex = classColumnIndex;
+    }
+  }, [classColumnIndex]);
+
+  // Public method to get the current class column index
+  DataStatistics.getClassColumnIndex = () => {
+    return classColumnIndex;
   };
 
   return (

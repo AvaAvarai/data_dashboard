@@ -7,8 +7,8 @@ import "../styles/ParallelCoordinatesPlot.css";
 const ParallelCoordinatesPlot = ({ data, headers }) => {
   const svgRef = useRef(null);
   const plotContainerRef = useRef(null);
-  const [classColumn, setClassColumn] = useState(null);
   const [normalized, setNormalized] = useState(false);
+  const [classColumn, setClassColumn] = useState(null);
   
   // Use custom hooks for fullscreen and dimensions
   const { isFullscreen, toggleFullscreen } = useFullscreen(plotContainerRef);
@@ -17,7 +17,7 @@ const ParallelCoordinatesPlot = ({ data, headers }) => {
   // Memoize numeric data processing
   const { numericHeaders } = useMemo(() => {
     if (!data || !data.length || !headers || !headers.length) {
-      return { numericHeaders: [] };
+      return { numericHeaders: [], nonNumericHeaders: [] };
     }
 
     const numericColumns = headers.map((_, i) => {
@@ -28,6 +28,49 @@ const ParallelCoordinatesPlot = ({ data, headers }) => {
 
     return { numericHeaders };
   }, [data, headers]);
+
+  // Update the useEffect to use a more reliable way to get class column changes
+  useEffect(() => {
+    const handleClassColumnChange = (event) => {
+      const statisticsContainer = event.target;
+      if (!statisticsContainer) return;  // Add guard clause
+      
+      const newClassColumnIndex = parseInt(statisticsContainer.dataset.classColumnIndex);
+      if (!isNaN(newClassColumnIndex) && headers[newClassColumnIndex]) {
+        setClassColumn(headers[newClassColumnIndex]);
+      }
+    };
+
+    // Wait for DOM to be ready
+    const initializeObserver = () => {
+      const statisticsContainer = document.querySelector('.statistics-container');
+      if (!statisticsContainer) {
+        // If container isn't found, try again in a short while
+        setTimeout(initializeObserver, 100);
+        return;
+      }
+
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          if (mutation.type === 'attributes' && mutation.attributeName === 'data-class-column-index') {
+            handleClassColumnChange({ target: mutation.target });
+          }
+        });
+      });
+
+      observer.observe(statisticsContainer, {
+        attributes: true,
+        attributeFilter: ['data-class-column-index']
+      });
+
+      // Initial setup
+      handleClassColumnChange({ target: statisticsContainer });
+
+      return () => observer.disconnect();
+    };
+
+    initializeObserver();
+  }, [headers]);
 
   // Memoize scales and color calculations
   const { y, x, classColorScale, classValues } = useMemo(() => {
@@ -62,20 +105,20 @@ const ParallelCoordinatesPlot = ({ data, headers }) => {
       .range([0, dimensions.width])
       .domain(numericHeaders);
 
+    // Extract unique class values if a class column is selected
     let classValues = [];
-    let classColorScale;
-
-    if (classColumn !== null) {
-      const classColumnIndex = headers.indexOf(classColumn);
-      classValues = [...new Set(data.map(row => row[classColumnIndex]))];
-      classColorScale = d3.scaleOrdinal(d3.schemeCategory10).domain(classValues);
+    if (classColumn) {
+      const columnIndex = headers.indexOf(classColumn);
+      classValues = Array.from(new Set(data.map(row => row[columnIndex])));
     } else {
-      classColorScale = d3.scaleOrdinal(d3.schemeCategory10);
       classValues = Array.from({length: 10}, (_, i) => `Group ${i + 1}`);
     }
 
+    const classColorScale = d3.scaleOrdinal(d3.schemeCategory10)
+      .domain(classValues);
+
     return { y, x, classColorScale, classValues };
-  }, [numericHeaders, headers, data, normalized, classColumn, dimensions]);
+  }, [numericHeaders, headers, data, normalized, dimensions, classColumn]);
 
   // Memoize line generator
   const line = useMemo(() => {
@@ -138,11 +181,19 @@ const ParallelCoordinatesPlot = ({ data, headers }) => {
         return typeof value === "number" ? { x: x(header), y: y[header](value) } : null;
       });
 
+      // Determine color based on class column if available
+      let color;
+      if (classColumn) {
+        const classIndex = headers.indexOf(classColumn);
+        const classValue = row[classIndex];
+        color = classColorScale(classValue);
+      } else {
+        color = classColorScale(i % 10);
+      }
+
       return {
         points,
-        color: classColumn !== null
-          ? classColorScale(row[headers.indexOf(classColumn)])
-          : classColorScale(i % 10)
+        color
       };
     });
 
@@ -157,11 +208,7 @@ const ParallelCoordinatesPlot = ({ data, headers }) => {
       .style("opacity", 0.7)
       .style("stroke-width", isFullscreen ? 2 : 1.5);
 
-  }, [data, headers, numericHeaders, dimensions, isFullscreen, x, y, line, classColumn, classColorScale, classValues]);
-
-  const handleClassColumnChange = useCallback((e) => {
-    setClassColumn(e.target.value === "none" ? null : e.target.value);
-  }, []);
+  }, [data, headers, numericHeaders, dimensions, isFullscreen, x, y, line, classColorScale, classValues, classColumn]);
 
   const toggleNormalization = useCallback(() => {
     setNormalized(prev => !prev);
@@ -172,17 +219,6 @@ const ParallelCoordinatesPlot = ({ data, headers }) => {
       <div className="plot-header">
         <h3>Parallel Coordinates Plot</h3>
         <div className="plot-controls">
-          <label htmlFor="class-select">Color by class: </label>
-          <select 
-            id="class-select" 
-            onChange={handleClassColumnChange}
-            value={classColumn || "none"}
-          >
-            <option value="none">-- No class selected --</option>
-            {headers.map((header, i) => (
-              <option key={i} value={header}>{header}</option>
-            ))}
-          </select>
           <button 
             onClick={toggleNormalization}
             className="normalize-btn"
@@ -204,13 +240,13 @@ const ParallelCoordinatesPlot = ({ data, headers }) => {
           <svg ref={svgRef}></svg>
         </div>
         <div className="legend-container">
-          <h4>{classColumn ? "Classes" : "Color Groups"}</h4>
+          <h4>{classColumn ? `Colors by ${classColumn}` : 'Color Groups'}</h4>
           {classValues.map((value, i) => (
             <div key={i} className="legend-item">
               <span 
                 className="legend-color" 
                 style={{
-                  backgroundColor: classColorScale(classColumn ? value : i),
+                  backgroundColor: classColorScale(value),
                   opacity: 0.7
                 }}
               />
