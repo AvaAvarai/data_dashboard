@@ -119,18 +119,29 @@
 .visualization-container {
   display: flex;
   gap: 20px;
-  align-items: flex-start;
+  align-items: stretch;
+  height: 600px; /* Fixed height for the visualization */
 }
 
 .svg-container {
   flex: 1;
-  min-width: 0; /* Allows SVG container to shrink below content size */
-  height: 500px;
+  min-width: 0;
   position: relative;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  overflow: hidden;
 }
 
-.parallel-plot-container.fullscreen .svg-container {
-  height: calc(100vh - 180px);
+.parallel-plot-container.fullscreen .visualization-container {
+  height: calc(100vh - 150px);
+}
+
+.parallel-plot-container svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
 }
 
 .legend-container {
@@ -140,6 +151,8 @@
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  overflow-y: auto;
+  max-height: 100%;
 }
 
 .legend-container h4 {

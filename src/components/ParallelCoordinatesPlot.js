@@ -89,21 +89,32 @@ const ParallelCoordinatesPlot = ({ data, headers }) => {
   useEffect(() => {
     if (!data?.length || !headers?.length || !numericHeaders.length) return;
 
+    // Get the container dimensions
+    const containerWidth = svgRef.current.parentNode.clientWidth;
+    const containerHeight = svgRef.current.parentNode.clientHeight;
+
     const margin = { 
-      top: 20, 
-      right: 30,
-      bottom: 20, 
-      left: 50 
+      top: 40,  // More space for labels
+      right: 40,
+      bottom: 40,
+      left: 60  // More space for axis labels
     };
-    const width = dimensions.width - margin.left - margin.right;
-    const height = dimensions.height - margin.top - margin.bottom;
+
+    const width = containerWidth - margin.left - margin.right;
+    const height = containerHeight - margin.top - margin.bottom;
+
+    // Update scale ranges to use new dimensions
+    x.range([0, width]);
+    Object.values(y).forEach(scale => scale.range([height, 0]));
 
     // Clear previous SVG
     d3.select(svgRef.current).selectAll("*").remove();
 
     const svg = d3.select(svgRef.current)
-      .attr("width", width + margin.left + margin.right)
-      .attr("height", height + margin.top + margin.bottom)
+      .attr("width", "100%")
+      .attr("height", "100%")
+      .attr("viewBox", `0 0 ${containerWidth} ${containerHeight}`)
+      .attr("preserveAspectRatio", "xMidYMid meet")
       .append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
