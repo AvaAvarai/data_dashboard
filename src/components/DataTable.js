@@ -59,7 +59,7 @@ const DataTable = ({ data, headers }) => {
 
   return (
     <div className="data-table-container">
-      <h3>Data Table Preview</h3>
+      <h3>Data Table</h3>
       <div className="table-container">
         <table>
           <thead>
